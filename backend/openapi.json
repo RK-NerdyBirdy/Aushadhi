@@ -1,0 +1,1402 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Hospital Drug Inventory Management System",
+    "description": "AI-powered drug inventory optimization using demand prediction and clustering",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "authentication"
+        ],
+        "summary": "Login",
+        "description": "Authenticate user and return JWT token.\nWorks for both hospital and vendor users.\n\n**Request Body:**\n- `user_email`: User email address\n- `user_password`: User password\n\n**Returns:**\n- `access_token`: JWT token for authenticated requests\n- `token_type`: Bearer token type\n- `user_id`: User identifier\n- `user_name`: User name\n- `organization_id`: Hospital/Vendor/Organization ID\n- `user_role`: User role (hospital_admin, hospital_staff, vendor_admin, vendor_staff)",
+        "operationId": "login_api_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLogin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "authentication"
+        ],
+        "summary": "Get Current User Info",
+        "description": "Get current logged-in user details.\nWorks for both hospital and vendor users.\n\n**Headers:**\n- `Authorization: Bearer \u003Ctoken\u003E`\n\n**Returns:**\n- User details with organization information",
+        "operationId": "get_current_user_info_api_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/hospital/upload-stock": {
+      "post": {
+        "tags": [
+          "data upload"
+        ],
+        "summary": "Upload Stock",
+        "description": "Upload current stock data via CSV file (Hospital users only).\n\n**Authentication:** Requires hospital_admin or hospital_staff role\n\n**CSV Format:**\n```\nmedicine_id,medicine_name,medicine_quantity,medicine_expiry\nMED001,Paracetamol 500mg,5000,2025-12-31\n```\n\n**Returns:**\n- `message`: Success/error message\n- `records_processed`: Total rows processed\n- `records_inserted`: New records added\n- `records_updated`: Existing records updated\n- `errors`: List of errors (if any)",
+        "operationId": "upload_stock_api_hospital_upload_stock_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_stock_api_hospital_upload_stock_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/hospital/upload-usage": {
+      "post": {
+        "tags": [
+          "data upload"
+        ],
+        "summary": "Upload Usage",
+        "description": "Upload historical usage data via CSV file (Hospital users only).\n\n**Authentication:** Requires hospital_admin or hospital_staff role\n\n**CSV Format:**\n```\nusage_date,medicine_id,medicine_name,quantity_consumed,department\n2024-01-15,MED001,Paracetamol 500mg,350,Outpatient\n```\n\n**Returns:**\n- `message`: Success/error message\n- `records_processed`: Total rows processed\n- `records_inserted`: New records added\n- `date_range`: Start and end dates of data\n- `errors`: List of errors (if any)",
+        "operationId": "upload_usage_api_hospital_upload_usage_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_usage_api_hospital_upload_usage_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/hospital/calculate-predictions": {
+      "post": {
+        "tags": [
+          "predictions"
+        ],
+        "summary": "Calculate Predictions",
+        "description": "Calculate X1, X2, X3, X4 and inventory parameters for all medicines (Hospital users only).\n\n**Authentication:** Requires hospital_admin or hospital_staff role\n\n**Implementation Steps:**\n1. Fetch stock and usage data from database\n2. Calculate X1_AMC (Average Monthly Consumption)\n3. Calculate X2_Prescriptions (Monthly average prescriptions)\n4. Calculate X3_CDPR (Chronic Disease Prescription Ratio)\n5. Calculate X4_CV (Coefficient of Variation)\n6. Apply K-Means clustering (4 clusters)\n7. Calculate (s, S) inventory parameters\n8. Save predictions to database",
+        "operationId": "calculate_predictions_api_hospital_calculate_predictions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PredictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/hospital/predictions": {
+      "get": {
+        "tags": [
+          "predictions"
+        ],
+        "summary": "Get Predictions",
+        "description": "Retrieve calculated predictions with filters (Hospital users only).\n\n**Authentication:** Requires hospital_admin or hospital_staff role\n\n**Query Parameters:**\n- `cluster_group`: Filter by cluster (1, 2, 3, or 4)\n- `low_stock_only`: Boolean - show only items below reorder point\n- `page`: Page number (default: 1)\n- `limit`: Items per page (default: 50)",
+        "operationId": "get_predictions_api_hospital_predictions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cluster_group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "Filter by cluster group (1-4)",
+              "title": "Cluster Group"
+            },
+            "description": "Filter by cluster group (1-4)"
+          },
+          {
+            "name": "low_stock_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Show only items below reorder point",
+              "default": false,
+              "title": "Low Stock Only"
+            },
+            "description": "Show only items below reorder point"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionsListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hospital/procurement/recommendations": {
+      "get": {
+        "tags": [
+          "procurement"
+        ],
+        "summary": "Get Procurement Recommendations",
+        "description": "Get AI-recommended medicines to order\n\n**Returns:**\n- List of medicines that need reordering\n- Sorted by urgency (critical → high → medium)\n- Includes estimated costs and delivery times",
+        "operationId": "get_procurement_recommendations_api_hospital_procurement_recommendations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/hospital/procurement/create-order": {
+      "post": {
+        "tags": [
+          "procurement"
+        ],
+        "summary": "Create Procurement Order",
+        "description": "Create procurement order from recommendations\n\n**Request Body:**\n- `medicines`: List of medicines to order with quantity and price\n- `expected_delivery_days`: Expected delivery timeline (default: 5)\n- `notes`: Optional order notes\n\n**Returns:**\n- List of created order IDs\n- Total cost and quantity\n- Order status (pending)",
+        "operationId": "create_procurement_order_api_hospital_procurement_create_order_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/hospital/dashboard/summary": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Dashboard Summary",
+        "description": "Get dashboard overview metrics\n\n**Returns:**\n- Inventory summary (total medicines, stock value, below reorder)\n- Cluster distribution\n- ABC-VED matrix distribution\n- Pending orders\n- Alert summary",
+        "operationId": "get_dashboard_summary_api_hospital_dashboard_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardSummary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/hospital/alerts": {
+      "get": {
+        "tags": [
+          "alerts and orders"
+        ],
+        "summary": "Get Alerts",
+        "description": "Get system alerts with filters\n\n**Query Parameters:**\n- `status`: unread, read, resolved\n- `severity`: critical, high, medium, low\n- `alert_type`: low_stock, expiry_warning, order_delayed\n- `limit`: Maximum number of alerts (default: 50)",
+        "operationId": "get_alerts_api_hospital_alerts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Filter: unread, read, resolved",
+              "title": "Status"
+            },
+            "description": "Filter: unread, read, resolved"
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Filter: critical, high, medium, low",
+              "title": "Severity"
+            },
+            "description": "Filter: critical, high, medium, low"
+          },
+          {
+            "name": "alert_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Filter: low_stock, expiry_warning, order_delayed",
+              "title": "Alert Type"
+            },
+            "description": "Filter: low_stock, expiry_warning, order_delayed"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertsListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hospital/orders": {
+      "get": {
+        "tags": [
+          "alerts and orders"
+        ],
+        "summary": "Get Orders",
+        "description": "List all orders with filters\n\n**Query Parameters:**\n- `status`: pending, completed, cancelled\n- `from_date`: Start date in YYYY-MM-DD format\n- `to_date`: End date in YYYY-MM-DD format\n- `page`: Page number (default: 1)\n- `limit`: Items per page (default: 20)",
+        "operationId": "get_orders_api_hospital_orders_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Filter: pending, completed, cancelled",
+              "title": "Status"
+            },
+            "description": "Filter: pending, completed, cancelled"
+          },
+          {
+            "name": "from_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Start date (YYYY-MM-DD)",
+              "title": "From Date"
+            },
+            "description": "Start date (YYYY-MM-DD)"
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "End date (YYYY-MM-DD)",
+              "title": "To Date"
+            },
+            "description": "End date (YYYY-MM-DD)"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "API health check",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "description": "Health check endpoint",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AbcVedMatrix": {
+        "properties": {
+          "A_V": {
+            "type": "integer",
+            "title": "A V"
+          },
+          "A_E": {
+            "type": "integer",
+            "title": "A E"
+          },
+          "B_V": {
+            "type": "integer",
+            "title": "B V"
+          },
+          "B_E": {
+            "type": "integer",
+            "title": "B E"
+          },
+          "C_D": {
+            "type": "integer",
+            "title": "C D"
+          }
+        },
+        "type": "object",
+        "required": [
+          "A_V",
+          "A_E",
+          "B_V",
+          "B_E",
+          "C_D"
+        ],
+        "title": "AbcVedMatrix"
+      },
+      "AlertResponse": {
+        "properties": {
+          "alert_id": {
+            "type": "integer",
+            "title": "Alert Id"
+          },
+          "medicine_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Medicine Id"
+          },
+          "medicine_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Medicine Name"
+          },
+          "alert_type": {
+            "type": "string",
+            "title": "Alert Type"
+          },
+          "alert_message": {
+            "type": "string",
+            "title": "Alert Message"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "alert_status": {
+            "type": "string",
+            "title": "Alert Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "alert_id",
+          "alert_type",
+          "alert_message",
+          "severity",
+          "alert_status",
+          "created_at"
+        ],
+        "title": "AlertResponse"
+      },
+      "AlertsListResponse": {
+        "properties": {
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count"
+          },
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/AlertResponse"
+            },
+            "type": "array",
+            "title": "Alerts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_count",
+          "alerts"
+        ],
+        "title": "AlertsListResponse"
+      },
+      "AlertsSummary": {
+        "properties": {
+          "critical": {
+            "type": "integer",
+            "title": "Critical"
+          },
+          "high": {
+            "type": "integer",
+            "title": "High"
+          },
+          "medium": {
+            "type": "integer",
+            "title": "Medium"
+          },
+          "low": {
+            "type": "integer",
+            "title": "Low"
+          }
+        },
+        "type": "object",
+        "required": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ],
+        "title": "AlertsSummary"
+      },
+      "Body_upload_stock_api_hospital_upload_stock_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_stock_api_hospital_upload_stock_post"
+      },
+      "Body_upload_usage_api_hospital_upload_usage_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_usage_api_hospital_upload_usage_post"
+      },
+      "DashboardSummary": {
+        "properties": {
+          "hospital_name": {
+            "type": "string",
+            "title": "Hospital Name"
+          },
+          "last_updated": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Updated"
+          },
+          "inventory_summary": {
+            "$ref": "#/components/schemas/InventorySummary"
+          },
+          "cluster_distribution": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Cluster Distribution"
+          },
+          "abc_ved_matrix": {
+            "$ref": "#/components/schemas/AbcVedMatrix"
+          },
+          "pending_orders": {
+            "$ref": "#/components/schemas/PendingOrdersSummary"
+          },
+          "alerts": {
+            "$ref": "#/components/schemas/AlertsSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hospital_name",
+          "last_updated",
+          "inventory_summary",
+          "cluster_distribution",
+          "abc_ved_matrix",
+          "pending_orders",
+          "alerts"
+        ],
+        "title": "DashboardSummary"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InventorySummary": {
+        "properties": {
+          "total_medicines": {
+            "type": "integer",
+            "title": "Total Medicines"
+          },
+          "total_stock_value": {
+            "type": "number",
+            "title": "Total Stock Value"
+          },
+          "medicines_below_reorder": {
+            "type": "integer",
+            "title": "Medicines Below Reorder"
+          },
+          "medicines_near_expiry": {
+            "type": "integer",
+            "title": "Medicines Near Expiry"
+          },
+          "out_of_stock": {
+            "type": "integer",
+            "title": "Out Of Stock"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_medicines",
+          "total_stock_value",
+          "medicines_below_reorder",
+          "medicines_near_expiry",
+          "out_of_stock"
+        ],
+        "title": "InventorySummary"
+      },
+      "MedicinePredictionResponse": {
+        "properties": {
+          "medicine_id": {
+            "type": "string",
+            "title": "Medicine Id"
+          },
+          "medicine_name": {
+            "type": "string",
+            "title": "Medicine Name"
+          },
+          "current_stock": {
+            "type": "integer",
+            "title": "Current Stock"
+          },
+          "X1_amc": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "X1 Amc"
+          },
+          "X2_prescriptions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "X2 Prescriptions"
+          },
+          "X3_CDPR": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "X3 Cdpr"
+          },
+          "X4_CV": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "X4 Cv"
+          },
+          "safety_stock": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Stock"
+          },
+          "reorder_stock": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reorder Stock"
+          },
+          "max_stock": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Stock"
+          },
+          "cluster_group": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cluster Group"
+          },
+          "needs_reorder": {
+            "type": "boolean",
+            "title": "Needs Reorder",
+            "default": false
+          },
+          "suggested_order_quantity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Order Quantity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "medicine_id",
+          "medicine_name",
+          "current_stock"
+        ],
+        "title": "MedicinePredictionResponse"
+      },
+      "OrderCreate": {
+        "properties": {
+          "medicines": {
+            "items": {
+              "$ref": "#/components/schemas/OrderItemCreate"
+            },
+            "type": "array",
+            "title": "Medicines"
+          },
+          "expected_delivery_days": {
+            "type": "integer",
+            "title": "Expected Delivery Days",
+            "default": 5
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "medicines"
+        ],
+        "title": "OrderCreate"
+      },
+      "OrderCreateResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "order_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Order Ids"
+          },
+          "total_medicines": {
+            "type": "integer",
+            "title": "Total Medicines"
+          },
+          "total_quantity": {
+            "type": "integer",
+            "title": "Total Quantity"
+          },
+          "total_cost": {
+            "type": "number",
+            "title": "Total Cost"
+          },
+          "expected_delivery_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Expected Delivery Date"
+          },
+          "order_status": {
+            "type": "string",
+            "title": "Order Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "order_ids",
+          "total_medicines",
+          "total_quantity",
+          "total_cost",
+          "expected_delivery_date",
+          "order_status"
+        ],
+        "title": "OrderCreateResponse"
+      },
+      "OrderItemCreate": {
+        "properties": {
+          "medicine_id": {
+            "type": "string",
+            "title": "Medicine Id"
+          },
+          "medicine_name": {
+            "type": "string",
+            "title": "Medicine Name"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity"
+          },
+          "unit_price": {
+            "type": "number",
+            "title": "Unit Price"
+          }
+        },
+        "type": "object",
+        "required": [
+          "medicine_id",
+          "medicine_name",
+          "quantity",
+          "unit_price"
+        ],
+        "title": "OrderItemCreate"
+      },
+      "PendingOrdersSummary": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "total_value": {
+            "type": "number",
+            "title": "Total Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "count",
+          "total_value"
+        ],
+        "title": "PendingOrdersSummary"
+      },
+      "PredictionRequest": {
+        "properties": {
+          "medicine_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Medicine Ids"
+          },
+          "recalculate_all": {
+            "type": "boolean",
+            "title": "Recalculate All",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "PredictionRequest"
+      },
+      "PredictionResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "medicines_analyzed": {
+            "type": "integer",
+            "title": "Medicines Analyzed"
+          },
+          "clusters_formed": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Clusters Formed"
+          },
+          "calculation_time_seconds": {
+            "type": "number",
+            "title": "Calculation Time Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "medicines_analyzed",
+          "clusters_formed",
+          "calculation_time_seconds"
+        ],
+        "title": "PredictionResponse"
+      },
+      "PredictionsListResponse": {
+        "properties": {
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "medicines": {
+            "items": {
+              "$ref": "#/components/schemas/MedicinePredictionResponse"
+            },
+            "type": "array",
+            "title": "Medicines"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_count",
+          "page",
+          "limit",
+          "medicines"
+        ],
+        "title": "PredictionsListResponse"
+      },
+      "StockUploadResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "records_processed": {
+            "type": "integer",
+            "title": "Records Processed"
+          },
+          "records_inserted": {
+            "type": "integer",
+            "title": "Records Inserted"
+          },
+          "records_updated": {
+            "type": "integer",
+            "title": "Records Updated"
+          },
+          "errors": {
+            "items": {
+
+            },
+            "type": "array",
+            "title": "Errors",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "records_processed",
+          "records_inserted",
+          "records_updated"
+        ],
+        "title": "StockUploadResponse"
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "user_name": {
+            "type": "string",
+            "title": "User Name"
+          },
+          "organization_id": {
+            "type": "string",
+            "title": "Organization Id"
+          },
+          "user_role": {
+            "type": "string",
+            "title": "User Role"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "token_type",
+          "user_id",
+          "user_name",
+          "organization_id",
+          "user_role"
+        ],
+        "title": "TokenResponse"
+      },
+      "UserLogin": {
+        "properties": {
+          "user_email": {
+            "type": "string",
+            "format": "email",
+            "title": "User Email"
+          },
+          "user_password": {
+            "type": "string",
+            "title": "User Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_email",
+          "user_password"
+        ],
+        "title": "UserLogin"
+      },
+      "UserResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "user_name": {
+            "type": "string",
+            "title": "User Name"
+          },
+          "user_email": {
+            "type": "string",
+            "title": "User Email"
+          },
+          "organization_id": {
+            "type": "string",
+            "title": "Organization Id"
+          },
+          "organization_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Name"
+          },
+          "user_role": {
+            "type": "string",
+            "title": "User Role"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "user_name",
+          "user_email",
+          "organization_id",
+          "user_role"
+        ],
+        "title": "UserResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
