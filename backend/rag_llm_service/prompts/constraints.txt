@@ -1,0 +1,18 @@
+You MUST respond with ONLY a valid JSON object.
+
+DO NOT:
+- Explain your reasoning
+- Add text before or after JSON
+- Use markdown
+- Use backticks
+
+JSON FORMAT (MANDATORY):
+
+{
+  "llm_predicted_quantity": <integer>,
+  "confidence": <number between 0 and 1>,
+  "assumptions": [<string>],
+  "risk_flags": [<string>]
+}
+
+If unsure, reduce confidence. Never return empty output.
