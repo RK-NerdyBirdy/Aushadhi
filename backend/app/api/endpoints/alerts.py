@@ -32,7 +32,7 @@ async def get_alerts(
     """
     alerts = AlertService.get_alerts(
         db,
-        current_user.hospital_id,
+        current_user.organization_id,
         status=status,
         severity=severity,
         alert_type=alert_type,
@@ -78,7 +78,7 @@ async def get_orders(
     - `page`: Page number (default: 1)
     - `limit`: Items per page (default: 20)
     """
-    query = db.query(Order).filter(Order.hospital_id == current_user.hospital_id)
+    query = db.query(Order).filter(Order.hospital_id == current_user.organization_id)
     
     if status:
         query = query.filter(Order.order_status == status)

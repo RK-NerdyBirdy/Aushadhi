@@ -43,7 +43,7 @@ def seed_sample_data():
         # Create user
         user = User(
             user_id="USR001",
-            hospital_id="HOSP001",
+            organization_id="HOSP001",
             user_name="Dr. Sharma",
             user_email="admin@hospital.com",
             user_password=hash_password("password123"),
@@ -56,7 +56,7 @@ def seed_sample_data():
         # Create medicine master data
         medicines = [
             MedicineInfo(
-                hospital_id="HOSP001",
+                organization_id="HOSP001",
                 medicine_id="MED001",
                 medicine_name="Paracetamol 500mg",
                 medicine_price=5.00,
@@ -67,7 +67,7 @@ def seed_sample_data():
                 pack_size="100"
             ),
             MedicineInfo(
-                hospital_id="HOSP001",
+                organization_id="HOSP001",
                 medicine_id="MED002",
                 medicine_name="Amoxicillin 250mg",
                 medicine_price=8.50,
@@ -78,7 +78,7 @@ def seed_sample_data():
                 pack_size="100"
             ),
             MedicineInfo(
-                hospital_id="HOSP001",
+                organization_id="HOSP001",
                 medicine_id="MED003",
                 medicine_name="Metformin 500mg",
                 medicine_price=3.00,
@@ -89,7 +89,7 @@ def seed_sample_data():
                 pack_size="100"
             ),
             MedicineInfo(
-                hospital_id="HOSP001",
+                organization_id="HOSP001",
                 medicine_id="MED004",
                 medicine_name="Amlodipine 5mg",
                 medicine_price=4.50,
@@ -100,7 +100,7 @@ def seed_sample_data():
                 pack_size="100"
             ),
             MedicineInfo(
-                hospital_id="HOSP001",
+                organization_id="HOSP001",
                 medicine_id="MED005",
                 medicine_name="Insulin Glargine 100IU",
                 medicine_price=3000.00,
@@ -119,35 +119,35 @@ def seed_sample_data():
         # Create stock data
         stocks = [
             HospitalStock(
-                hospital_id="HOSP001",
+                organization_id="HOSP001",
                 medicine_id="MED001",
                 medicine_name="Paracetamol 500mg",
                 medicine_quantity=3500,
                 medicine_expiry=datetime.utcnow().date() + timedelta(days=365)
             ),
             HospitalStock(
-                hospital_id="HOSP001",
+                organization_id="HOSP001",
                 medicine_id="MED002",
                 medicine_name="Amoxicillin 250mg",
                 medicine_quantity=1200,
                 medicine_expiry=datetime.utcnow().date() + timedelta(days=180)
             ),
             HospitalStock(
-                hospital_id="HOSP001",
+                organization_id="HOSP001",
                 medicine_id="MED003",
                 medicine_name="Metformin 500mg",
                 medicine_quantity=8500,
                 medicine_expiry=datetime.utcnow().date() + timedelta(days=400)
             ),
             HospitalStock(
-                hospital_id="HOSP001",
+                organization_id="HOSP001",
                 medicine_id="MED004",
                 medicine_name="Amlodipine 5mg",
                 medicine_quantity=2200,
                 medicine_expiry=datetime.utcnow().date() + timedelta(days=240)
             ),
             HospitalStock(
-                hospital_id="HOSP001",
+                organization_id="HOSP001",
                 medicine_id="MED005",
                 medicine_name="Insulin Glargine 100IU",
                 medicine_quantity=45,
@@ -177,7 +177,7 @@ def seed_sample_data():
         for i in range(30):
             for offset, med_id, qty, dept in usage_data:
                 usage = HospitalUsage(
-                    hospital_id="HOSP001",
+                    organization_id="HOSP001",
                     usage_date=base_date + timedelta(days=i),
                     medicine_id=med_id,
                     medicine_name="Medicine",

@@ -36,17 +36,17 @@ async def get_dashboard_summary(
     - Pending orders
     - Alert summary
     """
-    hospital_id = current_user.hospital_id
+    organization_id = current_user.organization_id
     
     # Get hospital name
     hospital = db.query(Organization).filter(
-        Organization.organization_id == hospital_id
+        Organization.organization_id == organization_id
     ).first()
     hospital_name = hospital.organization_name if hospital else "Unknown"
     
     # Inventory summary
     stock_data = db.query(HospitalStock).filter(
-        HospitalStock.hospital_id == hospital_id
+        HospitalStock.hospital_id == organization_id
     ).all()
     
     total_medicines = len(stock_data)
@@ -54,7 +54,7 @@ async def get_dashboard_summary(
     
     # Get predictions for better metrics
     predictions = db.query(HospitalPrediction).filter(
-        HospitalPrediction.hospital_id == hospital_id
+        HospitalPrediction.hospital_id == organization_id
     ).all()
     
     # Recalculate with actual prices
@@ -63,12 +63,12 @@ async def get_dashboard_summary(
     
     for pred in predictions:
         stock = db.query(HospitalStock).filter(
-            HospitalStock.hospital_id == hospital_id,
+            HospitalStock.hospital_id == organization_id,
             HospitalStock.medicine_id == pred.medicine_id
         ).first()
         
         medicine = db.query(MedicineInfo).filter(
-            MedicineInfo.hospital_id == hospital_id,
+            MedicineInfo.hospital_id == organization_id,
             MedicineInfo.medicine_id == pred.medicine_id
         ).first()
         
@@ -81,13 +81,13 @@ async def get_dashboard_summary(
     from datetime import timedelta, datetime as dt
     expiry_date = (dt.utcnow() + timedelta(days=30)).date()
     medicines_near_expiry = len(db.query(HospitalStock).filter(
-        HospitalStock.hospital_id == hospital_id,
+        HospitalStock.hospital_id == organization_id,
         HospitalStock.medicine_expiry <= expiry_date
     ).all())
     
     # Out of stock
     out_of_stock = len(db.query(HospitalStock).filter(
-        HospitalStock.hospital_id == hospital_id,
+        HospitalStock.hospital_id == organization_id,
         HospitalStock.medicine_quantity == 0
     ).all())
     
@@ -107,7 +107,7 @@ async def get_dashboard_summary(
     
     # ABC-VED matrix
     medicines_full = db.query(MedicineInfo).filter(
-        MedicineInfo.hospital_id == hospital_id
+        MedicineInfo.hospital_id == organization_id
     ).all()
     
     abc_ved = {
@@ -127,7 +127,7 @@ async def get_dashboard_summary(
     
     # Pending orders
     pending_orders = db.query(Order).filter(
-        Order.hospital_id == hospital_id,
+        Order.hospital_id == organization_id,
         Order.order_status == 'pending'
     ).all()
     
@@ -143,7 +143,7 @@ async def get_dashboard_summary(
     
     # Alerts
     alerts = db.query(Alert).filter(
-        Alert.hospital_id == hospital_id
+        Alert.hospital_id == organization_id
     ).all()
     
     alerts_summary = AlertsSummary(

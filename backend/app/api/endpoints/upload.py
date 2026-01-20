@@ -3,10 +3,36 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.api.deps import require_hospital_user
 from app.models.user import User
+from app.models.organization import Organization
 from app.schemas.stock import StockUploadResponse
+from app.schemas.upload import UploadStatusResponse
 from app.services.csv_processor import CSVProcessor
 
 router = APIRouter(prefix="/api/hospital", tags=["data upload"])
+
+
+@router.get("/upload", response_model=UploadStatusResponse)
+async def get_upload_status(
+    current_user: User = Depends(require_hospital_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get the status of file uploads for the user's hospital.
+    """
+    organization_id = current_user.organization_id
+    
+    organization = db.query(Organization).filter(Organization.organization_id == organization_id).first()
+    
+    if not organization:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Organization not found for the current user."
+        )
+        
+    return UploadStatusResponse(
+        uploaded_files=organization.uploaded_files,
+        uploaded_time=organization.uploaded_time
+    )
 
 
 @router.post("/upload-stock", response_model=StockUploadResponse)
@@ -39,8 +65,8 @@ async def upload_stock(
             detail="File must be a CSV file"
         )
     
-    # Derive hospital_id from organization_id (for hospital users)
-    hospital_id = current_user.organization_id
+    # Derive organization_id from organization_id (for hospital users)
+    organization_id = current_user.organization_id
     
     # Read file content
     try:
@@ -54,7 +80,7 @@ async def upload_stock(
     # Process CSV
     result = CSVProcessor.process_stock_csv(
         file_content,
-        hospital_id,
+        organization_id,
         db
     )
     
@@ -103,8 +129,8 @@ async def upload_usage(
             detail="File must be a CSV file"
         )
     
-    # Derive hospital_id from organization_id (for hospital users)
-    hospital_id = current_user.organization_id
+    # Derive organization_id from organization_id (for hospital users)
+    organization_id = current_user.organization_id
     
     # Read file content
     try:
@@ -118,7 +144,7 @@ async def upload_usage(
     # Process CSV
     result = CSVProcessor.process_usage_csv(
         file_content,
-        hospital_id,
+        organization_id,
         db
     )
     

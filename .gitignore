@@ -205,3 +205,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+SCHEMA.sql
+.python-version
+main.py
+pyptoject.toml

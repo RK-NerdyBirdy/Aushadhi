@@ -7,6 +7,7 @@ from .prediction import HospitalPrediction
 from .order import Order
 from .alert import Alert
 
+
 __all__ = [
     "Organization",
     "User",
@@ -17,3 +18,4 @@ __all__ = [
     "Order",
     "Alert",
 ]
+

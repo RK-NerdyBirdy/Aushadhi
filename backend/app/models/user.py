@@ -6,7 +6,7 @@ class User(Base):
     __tablename__ = "users"
     
     user_id = Column(VARCHAR(50), primary_key=True)
-    organization_id = Column(VARCHAR(50), ForeignKey("organizations.organization_id"), nullable=False)
+    organization_id = Column("hospital_id", VARCHAR(50), ForeignKey("organizations.organization_id"), nullable=False)
     user_name = Column(VARCHAR(255), nullable=False)
     user_email = Column(VARCHAR(255), unique=True, nullable=False)
     user_password = Column(VARCHAR(255), nullable=False)

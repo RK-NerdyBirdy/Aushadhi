@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from app.api.endpoints import alerts, auth, dashboard, predictions, procurement, upload
 from app.database import Base, engine
-from app.api.endpoints import auth, upload, predictions, procurement, dashboard, alerts
 
 # Create database tables
 Base.metadata.create_all(bind=engine)

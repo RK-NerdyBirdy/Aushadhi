@@ -30,7 +30,7 @@ async def get_procurement_recommendations(
     - Includes estimated costs and delivery times
     """
     recommendations = ProcurementService.get_recommendations(
-        current_user.hospital_id,
+        current_user.organization_id,
         db
     )
     
@@ -91,7 +91,7 @@ async def create_procurement_order(
     
     # Create orders
     order_ids = ProcurementService.create_orders(
-        current_user.hospital_id,
+        current_user.organization_id,
         [m.dict() for m in request.medicines],
         request.expected_delivery_days,
         db
