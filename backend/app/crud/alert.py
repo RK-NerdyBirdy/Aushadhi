@@ -11,11 +11,11 @@ class CRUDAlert:
             Alert.hospital_id == hospital_id
         ).offset(skip).limit(limit).all()
     
-    def get_active(self, db: Session, hospital_id: str, medicine_id: str = None, alert_type: str = None):
-        query = db.query(Alert).filter(
-            Alert.hospital_id == hospital_id,
-            Alert.alert_status == "active"
-        )
+    def get_active(self, db: Session, hospital_id: str = None, medicine_id: str = None, alert_type: str = None):
+        query = db.query(Alert)
+        if hospital_id:
+            query = query.filter(Alert.hospital_id == hospital_id)
+        query = query.filter(Alert.alert_status == "active")
         if medicine_id:
             query = query.filter(Alert.medicine_id == medicine_id)
         if alert_type:
