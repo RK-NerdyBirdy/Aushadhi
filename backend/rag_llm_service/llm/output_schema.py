@@ -9,8 +9,7 @@ class DailyForecast(BaseModel):
 
 
 class LLMQuantityPrediction(BaseModel):
-    medicine: str
-    hospital_id: str
-    forecast_period: str
-    total_predicted_demand: int
-    data: List[DailyForecast]
+    adjustment_factor: float
+    confidence: float = 0.5
+    assumptions: List[str] = []
+    risk_flags: List[str] = []

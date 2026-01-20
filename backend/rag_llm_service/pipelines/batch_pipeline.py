@@ -1,4 +1,4 @@
-from pipelines.rag_pipeline import RAGPipeline
+from rag_llm_service.pipelines.rag_pipeline import RAGPipeline
 
 class BatchPipeline:
     def __init__(self, rag_pipeline):

@@ -7,28 +7,24 @@ def build_context_block(*, usage, stock, prediction, medicine, orders):
         lines.append(f"Hospital ID: {usage['hospital_id']}")
         lines.append(f"Medicine: {usage['medicine_name']}")
         lines.append(f"Historical usage period: {usage['total_days']} days")
-        lines.append(
-            f"Average daily usage: {round(usage['avg_daily_usage'], 2)} units/day"
-        )
-        lines.append(
-            f"Peak daily usage: {usage['peak_daily_usage']} units"
-        )
-        lines.append(
-            f"Total usage in period: {usage['total_usage']} units"
-        )
+        lines.append(f"Average daily usage: {round(usage['avg_daily_usage'], 2)} units/day")
+        lines.append(f"Peak daily usage: {usage['peak_daily_usage']} units")
+        lines.append(f"Total usage in period: {usage['total_usage']} units")
 
+    # 🔥 FIXED STOCK HANDLING
     if stock:
-        total_stock = sum(s["medicine_quantity"] for s in stock)
-
-        nearest_expiry = min(
-            s["medicine_expiry"] for s in stock
-            if s.get("medicine_expiry")
-        )
-
-        lines.append(
-            f"Current total stock: {total_stock} units "
-            f"(nearest expiry: {nearest_expiry})"
-        )
+        if isinstance(stock, list) and isinstance(stock[0], dict):
+            total_stock = sum(s.get("medicine_quantity", 0) for s in stock)
+            earliest_expiry = min(
+                (s.get("medicine_expiry") for s in stock if s.get("medicine_expiry")),
+                default="unknown"
+            )
+            lines.append(
+                f"Current stock: {total_stock} units "
+                f"(earliest expiry: {earliest_expiry})"
+            )
+        else:
+            lines.append(f"Stock data present but malformed: {stock}")
 
     if prediction:
         lines.append(

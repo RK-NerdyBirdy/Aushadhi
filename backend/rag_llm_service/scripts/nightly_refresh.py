@@ -1,5 +1,5 @@
-from pipelines.batch_pipeline import BatchPipeline
-from pipelines.rag_pipeline import RAGPipeline
+from rag_llm_service.pipelines.batch_pipeline import BatchPipeline
+from rag_llm_service.pipelines.rag_pipeline import RAGPipeline
 
 with open("prompts/system.txt") as f:
     SYSTEM_PROMPT = f.read()

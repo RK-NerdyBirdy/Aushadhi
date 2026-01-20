@@ -1,6 +1,6 @@
 import psycopg2
 import psycopg2.extras
-from config.settings import DATABASE_URL
+from rag_llm_service.config.settings import DATABASE_URL
 
 
 class NeonClient:

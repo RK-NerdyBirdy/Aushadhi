@@ -1,1 +1,1 @@
-from config.settings import DATABASE_URL
+from rag_llm_service.config.settings import DATABASE_URL

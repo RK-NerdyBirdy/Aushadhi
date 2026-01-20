@@ -1,5 +1,5 @@
-from retrieval.context_builder import ContextBuilder
-from retrieval.embedding_store import EmbeddingStore
+from rag_llm_service.retrieval.context_builder import ContextBuilder
+from rag_llm_service.retrieval.embedding_store import EmbeddingStore
 from sentence_transformers import SentenceTransformer
 
 def main():

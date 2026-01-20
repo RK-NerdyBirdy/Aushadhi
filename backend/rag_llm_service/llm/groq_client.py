@@ -1,5 +1,5 @@
 from groq import Groq
-from config.groq import (
+from rag_llm_service.config.groq import (
     GROQ_API_KEY,
     GROQ_MODEL,
     GROQ_TEMPERATURE,

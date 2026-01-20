@@ -1,5 +1,5 @@
-from db.neon_client import NeonClient
-from db.sql_queries import (
+from rag_llm_service.db.neon_client import NeonClient
+from rag_llm_service.db.sql_queries import (
     USAGE_SUMMARY_QUERY,
     STOCK_QUERY,
     PREDICTION_INPUTS_QUERY,

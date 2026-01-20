@@ -1,18 +1,18 @@
 from fastapi import APIRouter
-from api.schemas import QuantityRequest, BatchQuantityRequest
-from pipelines.rag_pipeline import RAGPipeline
-from pipelines.batch_pipeline import BatchPipeline
+from rag_llm_service.api.schemas import QuantityRequest, BatchQuantityRequest
+from rag_llm_service.pipelines.rag_pipeline import RAGPipeline
+from rag_llm_service.pipelines.batch_pipeline import BatchPipeline
 
 router = APIRouter()
 
 # Load prompts at module level (VALID Python)
-with open("prompts/system.txt", "r") as f:
+with open("rag_llm_service/prompts/system.txt", "r") as f:
     SYSTEM_PROMPT = f.read()
 
-with open("prompts/quantity_forecast.txt", "r") as f:
+with open("rag_llm_service/prompts/quantity_forecast.txt", "r") as f:
     FORECAST_PROMPT = f.read()
 
-with open("prompts/constraints.txt", "r") as f:
+with open("rag_llm_service/prompts/constraints.txt", "r") as f:
     CONSTRAINTS_PROMPT = f.read()
 
 rag_pipeline = RAGPipeline(
@@ -35,8 +35,7 @@ def predict_quantity(req: QuantityRequest):
         req.hospital_id,
         req.medicine_id,
         req.forecast_days
-    ).dict()
-
+    )
 
 
 @router.post("/rag/batch-predict")
