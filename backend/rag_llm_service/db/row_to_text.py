@@ -1,43 +1,49 @@
 from datetime import date
 
-def build_context_block(
-    usage,
-    stock,
-    prediction,
-    medicine,
-    orders
-):
+def build_context_block(*, usage, stock, prediction, medicine, orders):
     lines = []
 
-    lines.append(f"Medicine: {usage['medicine_name']}")
-    lines.append(f"Hospital: {usage['hospital_id']}")
-
-    lines.append(
-        f"Average available quantity: {round(usage['avg_quantity_available'], 2)} units"
-    )
+    if usage:
+        lines.append(f"Hospital ID: {usage['hospital_id']}")
+        lines.append(f"Medicine: {usage['medicine_name']}")
+        lines.append(f"Historical usage period: {usage['total_days']} days")
+        lines.append(
+            f"Average daily usage: {round(usage['avg_daily_usage'], 2)} units/day"
+        )
+        lines.append(
+            f"Peak daily usage: {usage['peak_daily_usage']} units"
+        )
+        lines.append(
+            f"Total usage in period: {usage['total_usage']} units"
+        )
 
     if stock:
-        days_to_expiry = (stock["medicine_expiry"] - date.today()).days
-        lines.append(f"Current stock: {stock['medicine_quantity']} units")
-        lines.append(f"Days to expiry: {days_to_expiry}")
+        total_stock = sum(s["medicine_quantity"] for s in stock)
+
+        nearest_expiry = min(
+            s["medicine_expiry"] for s in stock
+            if s.get("medicine_expiry")
+        )
+
+        lines.append(
+            f"Current total stock: {total_stock} units "
+            f"(nearest expiry: {nearest_expiry})"
+        )
 
     if prediction:
-        daily_usage = prediction["x1_amc"] / 30
-        lines.append(f"Average daily usage: {round(daily_usage, 2)} units/day")
-        lines.append(f"Lead time: {prediction['lead_time']} days")
-        lines.append(f"Safety stock: {prediction['safety_stock']} units")
-        lines.append(f"Reorder point: {prediction['reorder_stock']} units")
+        lines.append(
+            f"Lead time: {prediction['lead_time']} days, "
+            f"Safety stock: {prediction['safety_stock']} units, "
+            f"Reorder point: {prediction['reorder_stock']} units"
+        )
 
-    lines.append(f"ABC category: {medicine['abc_category']}")
-    lines.append(f"VED category: {medicine['ved_category']}")
-    lines.append(
-        f"Cold storage required: {'Yes' if medicine['cold_storage'] else 'No'}"
-    )
-    lines.append(f"Unit cost: ₹{medicine['medicine_price']}")
-    lines.append(f"Pack size: {medicine['pack_size']}")
-
-    if medicine.get("salt_composition"):
-        lines.append(f"Salt composition: {medicine['salt_composition']}")
+    if medicine:
+        lines.append(
+            f"Price per unit: ₹{medicine['medicine_price']}, "
+            f"Cold storage required: {medicine['cold_storage']}, "
+            f"ABC: {medicine['abc_category']}, "
+            f"VED: {medicine['ved_category']}"
+        )
 
     if orders:
         lines.append("Recent orders:")
@@ -45,7 +51,9 @@ def build_context_block(
             lines.append(
                 f"- Status: {o['order_status']}, "
                 f"Predicted: {o['medicine_quantity_predicted']}, "
-                f"Received: {o['recieved_quantity']}"
+                f"Received: {o['recieved_quantity']}, "
+                f"Expected: {o['expected_delivery_date']}, "
+                f"Actual: {o['actual_delivery_date']}"
             )
 
     return "\n".join(lines)

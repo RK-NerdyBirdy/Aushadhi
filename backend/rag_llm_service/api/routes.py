@@ -5,13 +5,14 @@ from pipelines.batch_pipeline import BatchPipeline
 
 router = APIRouter()
 
-with open("prompts/system.txt") as f:
+# Load prompts at module level (VALID Python)
+with open("prompts/system.txt", "r") as f:
     SYSTEM_PROMPT = f.read()
 
-with open("prompts/quantity_forecast.txt") as f:
+with open("prompts/quantity_forecast.txt", "r") as f:
     FORECAST_PROMPT = f.read()
 
-with open("prompts/constraints.txt") as f:
+with open("prompts/constraints.txt", "r") as f:
     CONSTRAINTS_PROMPT = f.read()
 
 rag_pipeline = RAGPipeline(
@@ -22,23 +23,28 @@ rag_pipeline = RAGPipeline(
 
 batch_pipeline = BatchPipeline(rag_pipeline)
 
+
 @router.get("/health")
 def health():
     return {"status": "ok"}
 
+
 @router.post("/rag/predict-quantity")
 def predict_quantity(req: QuantityRequest):
-    result = rag_pipeline.run(
+    return rag_pipeline.run(
         req.hospital_id,
-        req.medicine_id
-    )
-    return result.dict()
+        req.medicine_id,
+        req.forecast_days
+    ).dict()
+
+
 
 @router.post("/rag/batch-predict")
 def batch_predict(req: BatchQuantityRequest):
     return {
         "results": batch_pipeline.run(
             req.hospital_id,
-            req.medicine_ids
+            req.medicine_ids,
+            req.forecast_days
         )
     }

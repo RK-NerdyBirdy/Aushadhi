@@ -1,10 +1,16 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import List
 
+
+class DailyForecast(BaseModel):
+    date: str
+    predicted_quantity: int
+    cumulative_total: int
+
+
 class LLMQuantityPrediction(BaseModel):
+    medicine: str
     hospital_id: str
-    medicine_id: str
-    llm_predicted_quantity: int = Field(ge=0)
-    confidence: float = Field(ge=0.0, le=1.0)
-    assumptions: List[str]
-    risk_flags: List[str]
+    forecast_period: str
+    total_predicted_demand: int
+    data: List[DailyForecast]

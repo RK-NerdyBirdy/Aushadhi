@@ -3,7 +3,10 @@ SELECT
     hu.hospital_id,
     hu.medicine_id,
     mi.medicine_name,
-    AVG(hu.dispensed_today) AS avg_quantity_dispensed
+    COUNT(*) AS total_days,
+    AVG(hu.usage_amount) AS avg_daily_usage,
+    SUM(hu.usage_amount) AS total_usage,
+    MAX(hu.usage_amount) AS peak_daily_usage
 FROM hospital_usage hu
 JOIN medicine_info mi
   ON hu.hospital_id = mi.hospital_id
@@ -12,7 +15,6 @@ WHERE hu.hospital_id = %s
   AND hu.medicine_id = %s
 GROUP BY hu.hospital_id, hu.medicine_id, mi.medicine_name;
 """
-
 STOCK_QUERY = """
 SELECT
     hs.medicine_quantity,
@@ -21,7 +23,6 @@ FROM hospital_stock hs
 WHERE hs.hospital_id = %s
   AND hs.medicine_id = %s;
 """
-
 PREDICTION_INPUTS_QUERY = """
 SELECT
     hp.X1_amc,
@@ -33,7 +34,6 @@ FROM hospital_predictions hp
 WHERE hp.hospital_id = %s
   AND hp.medicine_id = %s;
 """
-
 MEDICINE_INFO_QUERY = """
 SELECT
     medicine_price,
@@ -46,7 +46,6 @@ FROM medicine_info
 WHERE hospital_id = %s
   AND medicine_id = %s;
 """
-
 RECENT_ORDERS_QUERY = """
 SELECT
     order_status,
