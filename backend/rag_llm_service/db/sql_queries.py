@@ -3,7 +3,7 @@ SELECT
     hu.hospital_id,
     hu.medicine_id,
     mi.medicine_name,
-    AVG(hu.quantity_available) AS avg_quantity_available
+    AVG(hu.dispensed_today) AS avg_quantity_dispensed
 FROM hospital_usage hu
 JOIN medicine_info mi
   ON hu.hospital_id = mi.hospital_id
