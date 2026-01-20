@@ -1,0 +1,10 @@
+Given the following inventory and usage context, predict the quantity of medicine
+that should be ordered for the next replenishment cycle.
+
+Rules:
+- Account for average daily usage
+- Include lead time and safety stock
+- Be conservative for ABC=A or VED=V medicines
+- Avoid excessive overstock
+
+Return ONLY valid JSON in the specified format.
