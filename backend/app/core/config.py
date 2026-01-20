@@ -34,9 +34,16 @@ class Settings(BaseSettings):
     DEFAULT_LIMIT: int = 100
     MAX_LIMIT: int = 1000
     
+    # GROQ LLM Configuration
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_TEMPERATURE: float = 0.2
+    GROQ_MAX_TOKENS: int = 1024
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "allow"  # Allow extra fields from .env
     
     @property
     def allowed_cors_origins(self) -> List[str]:

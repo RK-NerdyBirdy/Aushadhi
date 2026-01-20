@@ -10,6 +10,8 @@ from app.models.user import User
 from app.models.stock import HospitalStock
 from app.models.usage import HospitalUsage
 from app.models.order import Order
+from app.models.prediction import HospitalPrediction
+from app.services.rag_integration import RAGContextBuilder
 
 router = APIRouter()
 
@@ -18,7 +20,7 @@ def get_dashboard(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get comprehensive dashboard overview for user's hospital"""
+    """Get comprehensive dashboard overview with RAG LLM-enhanced predictions"""
     hospital_id = current_user.hospital_id
     
     # Get all stock
@@ -48,6 +50,23 @@ def get_dashboard(
             HospitalStock.medicine_expiry < datetime.now().date()
         )
     ).count()
+    
+    # RAG LLM Predictions Summary
+    rag_predictions = db.query(HospitalPrediction).filter(
+        HospitalPrediction.hospital_id == hospital_id
+    ).all()
+    
+    # Get confidence metrics from RAG predictions
+    rag_metrics = {
+        "total_predictions": len(rag_predictions),
+        "average_confidence": 0,
+        "active_risk_flags": 0
+    }
+    
+    if rag_predictions:
+        confidences = [getattr(p, 'llm_confidence', 0.5) for p in rag_predictions if hasattr(p, 'llm_confidence')]
+        if confidences:
+            rag_metrics["average_confidence"] = sum(confidences) / len(confidences)
     
     # Pending orders
     pending_orders = order_crud.get_by_status(db, hospital_id=hospital_id, status='pending')

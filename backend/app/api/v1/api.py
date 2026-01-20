@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
     auth, organizations, users, medicines, stock, usage,
-    predictions, orders, alerts, dashboard, reports
+    predictions, orders, alerts, dashboard, reports, admin_predictions
 )
 
 api_router = APIRouter()
@@ -13,6 +13,7 @@ api_router.include_router(medicines.router, prefix="/medicines", tags=["Medicine
 api_router.include_router(stock.router, prefix="/stock", tags=["Stock"])
 api_router.include_router(usage.router, prefix="/usage", tags=["Usage"])
 api_router.include_router(predictions.router, prefix="/predictions", tags=["Predictions"])
+api_router.include_router(admin_predictions.router, tags=["Admin"])
 api_router.include_router(orders.router, prefix="/orders", tags=["Orders"])
 api_router.include_router(alerts.router, prefix="/alerts", tags=["Alerts"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])

@@ -1,17 +1,17 @@
-from sqlalchemy import Column, String, VARCHAR, INTEGER, Date, PrimaryKeyConstraint, CheckConstraint, ForeignKeyConstraint
+from sqlalchemy import Column, VARCHAR, Integer, DATE, ForeignKey, CheckConstraint, PrimaryKeyConstraint
 from app.database import Base
+
 
 class HospitalStock(Base):
     __tablename__ = "hospital_stock"
     
-    hospital_id = Column(VARCHAR(50), nullable=False)
+    hospital_id = Column(VARCHAR(50), ForeignKey("organizations.organization_id"), nullable=False)
     medicine_id = Column(VARCHAR(50), nullable=False)
-    medicine_name = Column(String(255), nullable=False)
-    medicine_expiry = Column(Date, nullable=False)
-    medicine_quantity = Column(INTEGER, nullable=False)
+    medicine_name = Column(VARCHAR(255), nullable=False)
+    medicine_expiry = Column(DATE, nullable=False)
+    medicine_quantity = Column(Integer, nullable=False)
     
     __table_args__ = (
-        PrimaryKeyConstraint('hospital_id', 'medicine_id'),
-        ForeignKeyConstraint(['hospital_id', 'medicine_id'], ['medicine_info.hospital_id', 'medicine_info.medicine_id']),
-        CheckConstraint('medicine_quantity >= 0'),
+        PrimaryKeyConstraint('hospital_id', 'medicine_id', name='pk_hospital_stock'),
+        CheckConstraint('medicine_quantity >= 0', name='ck_stock_quantity_positive'),
     )
