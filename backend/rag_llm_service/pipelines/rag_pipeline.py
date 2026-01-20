@@ -12,13 +12,9 @@ from rag_llm_service.llm.llm_runner import LLMRunner
 
 
 class RAGPipeline:
-    def __init__(self, system_prompt, forecast_prompt, constraints_prompt):
+    def __init__(self):
         self.db = NeonClient()
-        self.llm = LLMRunner(
-            system_prompt,
-            forecast_prompt,
-            constraints_prompt
-        )
+        self.llm = LLMRunner()
 
     def run(self, hospital_id, medicine_id, forecast_days=14):
         usage = self.db.fetch_one(
@@ -47,11 +43,11 @@ class RAGPipeline:
         )
 
         context = build_context_block(
-            usage=usage,
-            stock=stock[0] if stock else None,
-            prediction=prediction,
-            medicine=medicine,
-            orders=orders
+            usage_summary=usage,
+            stock_levels=stock[0] if stock else None,
+            prediction_inputs=prediction,
+            medicine_info=medicine,
+            recent_orders=orders
         )
 
         # Generate baseline forecast from current prediction if exists

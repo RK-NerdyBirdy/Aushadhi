@@ -22,18 +22,9 @@ class RAGPredictionService:
     Replaces traditional ML-based predictions with LLM-enhanced context-aware predictions
     """
     
-    def __init__(self):
-        # Load prompts
-        self.system_prompt = self._load_prompt("system.txt")
-        self.forecast_prompt = self._load_prompt("quantity_forecast.txt")
-        self.constraints_prompt = self._load_prompt("constraints.txt")
-        
+    def __init__(self):        
         # Initialize RAG pipeline
-        self.rag_pipeline = RAGPipeline(
-            system_prompt=self.system_prompt,
-            forecast_prompt=self.forecast_prompt,
-            constraints_prompt=self.constraints_prompt
-        )
+        self.rag_pipeline = RAGPipeline()
         self.neon_db = NeonClient()
     
     def _load_prompt(self, filename: str) -> str:
@@ -156,8 +147,14 @@ class RAGPredictionService:
         Apply LLM-suggested adjustments to baseline metrics
         LLM provides adjustment_factor and confidence scores
         """
-        adjustment_factor = getattr(llm_result, 'adjustment_factor', 1.0)
-        confidence = getattr(llm_result, 'confidence', 0.5)
+        if not isinstance(llm_result, dict):
+            llm_result = {}
+
+        adjustment_factor = float(llm_result.get("adjustment_factor", 1.0))
+        confidence = float(llm_result.get("confidence", 0.5))
+
+        assumptions = llm_result.get("assumptions", [])
+        risk_flags = llm_result.get("risk_flags", [])
         
         # Calculate adjusted metrics
         adjusted_amc = baseline.get('average_usage', 0) * adjustment_factor
@@ -174,22 +171,22 @@ class RAGPredictionService:
         daily_holding_charge = float(medicine.medicine_price) * 0.01 if medicine.medicine_price else 0
         
         return {
-            "hospital_id": medicine.hospital_id,
-            "medicine_id": medicine.medicine_id,
-            "medicine_name": medicine.medicine_name,
-            "X1_amc": Decimal(str(adjusted_amc)),
-            "X2_prescriptions": int(baseline.get('total_records', 0)),
-            "X3_CDPR": Decimal("0.5"),  # Chronic disease prevalence (placeholder)
-            "X4_CV": Decimal(str(0.3 + (0.2 * (1 - confidence)))),  # Coefficient of variation
-            "lead_time": lead_time,
-            "safety_stock": safety_stock,
-            "reorder_stock": reorder_stock,
-            "max_stock": max_stock,
-            "daily_holding_charges": Decimal(str(daily_holding_charge)),
-            "llm_confidence": confidence,
-            "llm_assumptions": getattr(llm_result, 'assumptions', []),
-            "llm_risk_flags": getattr(llm_result, 'risk_flags', [])
-        }
+    "hospital_id": medicine.hospital_id,
+    "medicine_id": medicine.medicine_id,
+    "medicine_name": medicine.medicine_name,
+    "X1_amc": Decimal(str(adjusted_amc)),
+    "X2_prescriptions": int(baseline.get("total_records", 0)),
+    "X3_CDPR": Decimal("0.5"),
+    "X4_CV": Decimal(str(0.3 + (0.2 * (1 - confidence)))),
+    "lead_time": lead_time,
+    "safety_stock": safety_stock,
+    "reorder_stock": reorder_stock,
+    "max_stock": max_stock,
+    "daily_holding_charges": Decimal(str(daily_holding_charge)),
+    "llm_confidence": confidence,
+    "llm_assumptions": assumptions,
+    "llm_risk_flags": risk_flags
+}
     
     def generate_all_predictions_for_hospital(
         self,
