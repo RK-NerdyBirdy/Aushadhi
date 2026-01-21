@@ -1,104 +1,70 @@
-#!/usr/bin/env python3
-"""
-Database Schema Inspector - Get all table descriptions
-"""
-import os
-from dotenv import load_dotenv
 import psycopg2
-from psycopg2.extras import RealDictCursor
-from urllib.parse import urlparse
+import sys
 
-# Load environment variables
-load_dotenv()
+def describe_all_tables(conn_string):
+    """
+    Connects to a PostgreSQL database and prints the schema for all tables.
+    """
+    conn = None
+    try:
+        # Connect to the PostgreSQL database using the connection string
+        conn = psycopg2.connect(conn_string)
+        # Create a cursor object
+        cur = conn.cursor()
 
-# Parse connection string
-db_url = os.getenv('DATABASE_URL')
-parsed = urlparse(db_url)
+        # Query to get all user-defined table names in the 'public' schema
+        cur.execute("""
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
+        """)
+        
+        tables = cur.fetchall()
 
-connection_params = {
-    'host': parsed.hostname,
-    'port': parsed.port or 5432,
-    'database': parsed.path.lstrip('/').split('?')[0],  # Handle query params
-    'user': parsed.username,
-    'password': parsed.password,
-}
+        if not tables:
+            print("No tables found in the 'public' schema.")
+            return
 
-print(f"Connecting to: {connection_params['host']}:{connection_params['port']}/{connection_params['database']}")
+        for table in tables:
+            table_name = table[0]
+            print(f"\n--- Table: {table_name} ---")
 
-try:
-    conn = psycopg2.connect(**connection_params)
-    cur = conn.cursor(cursor_factory=RealDictCursor)
+            # Query to get column details (name and data type) for the current table
+            cur.execute("""
+                SELECT column_name, data_type, character_maximum_length, is_nullable, column_default
+                FROM information_schema.columns
+                WHERE table_schema = 'public' AND table_name = %s
+                ORDER BY ordinal_position;
+            """, (table_name,))
+
+            columns = cur.fetchall()
+            for col in columns:
+                col_name, data_type, max_len, is_nullable, default_val = col
+                details = f"  - {col_name}: {data_type}"
+                if max_len is not None:
+                    details += f"({max_len})"
+                details += f" | Nullable: {is_nullable}"
+                if default_val is not None:
+                    details += f" | Default: {default_val}"
+                print(details)
+
+        # Close the cursor and connection
+        cur.close()
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(f"Error: {error}")
+        sys.exit(1)
+    finally:
+        if conn is not None:
+            conn.close()
+            print("\nDatabase connection closed.")
+
+if __name__ == '__main__':
+    # Replace the placeholder with your actual Neon database connection string
+    # The format is typically: "postgresql://user:password@host:port/dbname?sslmode=require"
+    neon_conn_string = "postgresql://neondb_owner:npg_Oslv6SAEJex7@ep-snowy-glitter-a17b3nee-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
     
-    tables = ['alerts', 'hospital_predictions', 'hospital_stock', 'medicine_info', 'orders', 'organizations', 'users']
-    
-    for table in tables:
-        print(f"\n{'='*80}")
-        print(f"Table: {table}")
-        print('='*80)
-        
-        # Get table info
-        cur.execute(f"""
-            SELECT column_name, data_type, is_nullable, column_default
-            FROM information_schema.columns
-            WHERE table_name = %s
-            ORDER BY ordinal_position
-        """, (table,))
-        
-        columns = cur.fetchall()
-        
-        if not columns:
-            print(f"  [Table does not exist or has no columns]")
-            continue
-        
-        # Get constraints
-        cur.execute(f"""
-            SELECT constraint_name, constraint_type
-            FROM information_schema.table_constraints
-            WHERE table_name = %s
-        """, (table,))
-        
-        constraints = cur.fetchall()
-        
-        # Print columns
-        print("\nColumns:")
-        for col in columns:
-            nullable = "NULL" if col['is_nullable'] == 'YES' else "NOT NULL"
-            default = f" default {col['column_default']}" if col['column_default'] else ""
-            print(f"  {col['column_name']:<30} {col['data_type']:<20} {nullable:<10}{default}")
-        
-        # Print constraints
-        if constraints:
-            print("\nConstraints:")
-            for constraint in constraints:
-                print(f"  {constraint['constraint_name']:<40} {constraint['constraint_type']}")
-        
-        # Get foreign keys
-        cur.execute(f"""
-            SELECT DISTINCT
-                rc.constraint_name,
-                kcu1.column_name,
-                ccu.table_name AS foreign_table_name,
-                ccu.column_name AS foreign_column_name
-            FROM information_schema.referential_constraints rc
-            JOIN information_schema.key_column_usage kcu1 
-                ON rc.constraint_name = kcu1.constraint_name 
-                AND rc.constraint_schema = kcu1.table_schema
-            JOIN information_schema.constraint_column_usage ccu 
-                ON rc.unique_constraint_name = ccu.constraint_name
-            WHERE kcu1.table_name = %s
-        """, (table,))
-        
-        fks = cur.fetchall()
-        if fks:
-            print("\nForeign Keys:")
-            for fk in fks:
-                print(f"  {fk['constraint_name']}: {fk['column_name']} -> {fk['foreign_table_name']}.{fk['foreign_column_name']}")
-    
-    cur.close()
-    conn.close()
-    print(f"\n{'='*80}\n✅ Database inspection completed\n")
-    
-except Exception as e:
-    print(f"❌ Error: {e}")
-    import traceback
-    traceback.print_exc()
+    # !!! IMPORTANT: Replace this with your actual connection string !!!
+    # Example: neon_conn_string = "postgresql://alex:secretpassword@ep-cool-stuff-12345.us-east-2.aws.neon.tech/mydb?sslmode=require"
+
+    describe_all_tables(neon_conn_string)
