@@ -46,7 +46,7 @@ export default function Sidebar({
   const pathname = usePathname()
 
   return (
-    <aside className="hidden md:flex h-screen w-64 flex-col border-r bg-muted/40">
+    <aside className="hidden md:flex min-h-screen w-64 flex-col border-r bg-muted/40">
       {/* LOGO */}
       <div className="px-6 py-3 h-12 border-b">
         Aushadi Inc.
