@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label"
 import LiquidEther from "@/components/background/liquid"
 import RotatingText from "@/components/rotatingText"
 
+import { login, getMe } from "../apis/auth"
+
 export default function LoginPage() {
   const router = useRouter()
 
@@ -20,62 +22,133 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [showLogin, setShowLogin] = useState(false)
 
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  const handleLogin = async () => {
+    console.log("🟡 Login button clicked")
+    console.log("📧 Email:", email)
+    console.log("🔑 Password:", password)
+
+    setError("")
+    setLoading(true)
+
+    try {
+      console.log("➡️ Calling /auth/login API...")
+
+      // 1️⃣ LOGIN
+      const data = await login(email, password)
+
+      console.log("✅ Login response:", data)
+
+      if (!data?.access_token) {
+        console.error("❌ No access token received")
+        throw new Error("Token missing")
+      }
+
+      // 2️⃣ STORE TOKEN
+      localStorage.setItem("access_token", data.access_token)
+      console.log("💾 Access token saved to localStorage")
+
+      // 3️⃣ FETCH USER
+      console.log("➡️ Calling /auth/me API...")
+
+      const user = await getMe()
+
+      console.log("✅ /me response:", user)
+
+      // 4️⃣ STORE USER
+      localStorage.setItem("user", JSON.stringify(user))
+      console.log("💾 User saved:", user)
+
+      // 5️⃣ ROLE ROUTING
+      console.log("👤 User role:", user.user_role)
+
+      if (user.user_role === "admin") {
+        console.log("➡️ Redirecting to /dashboard/pharmacy")
+        router.push("/dashboard/pharmacy")
+      } else {
+        console.log("➡️ Redirecting to /dashboard/warehouse")
+        router.push("/dashboard/warehouse")
+      }
+
+    } catch (err: any) {
+      console.error("🔥 LOGIN FAILED")
+
+      console.error("Raw error:", err)
+
+      console.error(
+        "Backend message:",
+        err?.response?.data
+      )
+
+      setError(
+        err?.response?.data?.detail ||
+        "Invalid email or password"
+      )
+    } finally {
+      setLoading(false)
+      console.log("🔚 Login attempt finished")
+    }
+  }
+
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 relative overflow-hidden">
 
       {/* BACKGROUND */}
-        <div className="absolute inset-0">
-            <LiquidEther />
-        </div>
+      <div className="absolute inset-0">
+        <LiquidEther />
+      </div>
 
       {/* LEFT PANEL */}
-        <div className="relative z-10 flex flex-col justify-center px-16 text-white">
-            <h1 className="absolute top-4 left-4 text-2xl font-bold">
-                Aushadhi Inc.
-            </h1>
-            <p className="text-5xl font-semibold pb-1">Your Dashboard For</p>
-            <div className="inline-flex">
-                <RotatingText
-                    texts={[
-                    "Real-time inventory visibility",
-                    "Predictive shortage & expiry alerts",
-                    "Secure traceability & audit logs",
-                    "Everything"
-                    ]}
-                    staggerDuration={0.05}
-                    mainClassName="
-                    py-1
-                    text-5xl
-                    font-semibold
-                    text-white
-                    "
-                    splitBy="words"
-                    staggerFrom="last"
-                    initial={{ y: '100%', opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: '-120%', opacity: 0 }}
-                    rotationInterval={3000}
-                    transition={{ type: 'spring', damping: 30, stiffness: 200 }}
-                    splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
-                />
-            </div>
+      <div className="relative z-10 flex flex-col justify-center px-16 text-white">
+        <h1 className="absolute top-4 left-4 text-2xl font-bold">
+          Aushadhi Inc.
+        </h1>
 
-            <p className="text-lg text-white max-w-xl py-5">
-                Intelligent Drug Inventory & Supply Chain Management Platform
-                ensuring transparency, availability and efficiency across
-                healthcare institutions.
-            </p>
+        <p className="text-5xl font-semibold pb-1">
+          Your Dashboard For
+        </p>
 
-            <p className="text-sm text-white">
-                Designed for hospitals, warehouses and public health systems.
-            </p>
-
-            <div className="absolute bottom-5">
-                <p>
-                    BigBoyCoders • InnoHack VIT • PS32
-                </p>
-            </div>
+        <div className="inline-flex">
+          <RotatingText
+            texts={[
+              "Real-time inventory visibility",
+              "Predictive shortage & expiry alerts",
+              "Secure traceability & audit logs",
+              "Everything",
+            ]}
+            staggerDuration={0.05}
+            mainClassName="py-1 text-5xl font-semibold text-white"
+            splitBy="words"
+            staggerFrom="last"
+            initial={{ y: "100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "-120%", opacity: 0 }}
+            rotationInterval={3000}
+            transition={{
+              type: "spring",
+              damping: 30,
+              stiffness: 200,
+            }}
+            splitLevelClassName="overflow-hidden pb-1"
+          />
         </div>
+
+        <p className="text-lg max-w-xl py-5">
+          Intelligent Drug Inventory & Supply Chain Management Platform
+          ensuring transparency, availability and efficiency across
+          healthcare institutions.
+        </p>
+
+        <p className="text-sm">
+          Designed for hospitals, warehouses and public health systems.
+        </p>
+
+        <div className="absolute bottom-5">
+          <p>BigBoyCoders • InnoHack VIT • PS32</p>
+        </div>
+      </div>
 
       {/* RIGHT PANEL */}
       <div className="relative z-10 flex items-center justify-center overflow-hidden">
@@ -130,7 +203,7 @@ export default function LoginPage() {
               transition={{ delay: 0.5, duration: 0.5 }}
               className="relative z-20"
             >
-              <Card className="w-95 shadow-2xl">
+              <Card className="w-96 shadow-2xl">
                 <CardContent className="space-y-5 py-10">
 
                   <h2 className="text-2xl font-bold text-center text-emerald-700">
@@ -139,7 +212,10 @@ export default function LoginPage() {
 
                   <div className="space-y-2">
                     <Label>Email</Label>
-                    <Input value={email} onChange={e => setEmail(e.target.value)} />
+                    <Input
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -147,15 +223,22 @@ export default function LoginPage() {
                     <Input
                       type="password"
                       value={password}
-                      onChange={e => setPassword(e.target.value)}
+                      onChange={(e) => setPassword(e.target.value)}
                     />
                   </div>
 
+                  {error && (
+                    <p className="text-sm text-red-500 text-center">
+                      {error}
+                    </p>
+                  )}
+
                   <Button
-                    className="w-full h-11 bg-emerald-800 hover:bg-emerald-950 transition-colors duration-200 ease-in-out"
-                    onClick={() => router.push("/dashboard/warehouse")}
+                    className="w-full h-11 bg-emerald-800 hover:bg-emerald-950"
+                    disabled={loading}
+                    onClick={handleLogin}
                   >
-                    Login
+                    {loading ? "Signing in..." : "Login"}
                   </Button>
 
                 </CardContent>

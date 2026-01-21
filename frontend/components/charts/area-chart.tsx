@@ -29,9 +29,9 @@ export default function DashboardAreaChart() {
         <Area
           type="monotone"
           dataKey="value"
-          stroke="hsl(var(--primary))"
-          fill="hsl(var(--primary))"
-          fillOpacity={0.2}
+          stroke="black"
+          fill="black"
+          fillOpacity={0.1}
         />
       </AreaChart>
     </ResponsiveContainer>
