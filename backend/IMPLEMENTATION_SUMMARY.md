@@ -40,8 +40,8 @@ GET    /api/auth/me              → Get current user details
 
 **Endpoints**:
 ```
-POST   /api/hospital/upload-stock    → Upload stock CSV
-POST   /api/hospital/upload-usage    → Upload usage CSV
+POST   /api/hospital/upload_stock    → Upload stock CSV
+POST   /api/hospital/upload_usage    → Upload usage CSV
 ```
 
 **Validation**:
@@ -351,8 +351,8 @@ backend/
 |--------|----------|---------|
 | POST | `/api/auth/login` | Authenticate user |
 | GET | `/api/auth/me` | Get current user |
-| POST | `/api/hospital/upload-stock` | Upload stock CSV |
-| POST | `/api/hospital/upload-usage` | Upload usage CSV |
+| POST | `/api/hospital/upload_stock` | Upload stock CSV |
+| POST | `/api/hospital/upload_usage` | Upload usage CSV |
 | POST | `/api/hospital/calculate-predictions` | Calculate predictions |
 | GET | `/api/hospital/predictions` | Get predictions |
 | GET | `/api/hospital/procurement/recommendations` | Get recommendations |

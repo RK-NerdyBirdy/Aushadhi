@@ -208,7 +208,7 @@ class PredictionEngine:
             {
                 'medicine_id': u.medicine_id,
                 'usage_date': u.usage_date,
-                'quantity_consumed': u.quantity_consumed
+                'quantity_consumed': u.usage_amount
             }
             for u in usage_data_records
         ])

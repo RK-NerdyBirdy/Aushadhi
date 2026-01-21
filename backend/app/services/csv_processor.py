@@ -159,7 +159,7 @@ class CSVProcessor:
                     medicine_id = str(row['medicine_id']).strip()
                     medicine_name = str(row['medicine_name']).strip()
                     quantity_consumed = int(row['quantity_consumed'])
-                    department = str(row['department']).strip() if pd.notna(row['department']) else None
+                    # department ignored as per schema
                     
                     # Check if medicine exists
                     medicine = db.query(MedicineInfo).filter(
@@ -184,8 +184,7 @@ class CSVProcessor:
                             usage_date=usage_date,
                             medicine_id=medicine_id,
                             medicine_name=medicine_name,
-                            quantity_consumed=quantity_consumed,
-                            department=department
+                            usage_amount=quantity_consumed
                         )
                         db.add(usage)
                         records_inserted += 1

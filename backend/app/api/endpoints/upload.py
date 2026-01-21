@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
-from app.database import get_db
+
 from app.api.deps import require_hospital_user
-from app.models.user import User
+from app.database import get_db
 from app.models.organization import Organization
+from app.models.user import User
 from app.schemas.stock import StockUploadResponse
 from app.schemas.upload import UploadStatusResponse
 from app.services.csv_processor import CSVProcessor
@@ -11,7 +12,7 @@ from app.services.csv_processor import CSVProcessor
 router = APIRouter(prefix="/api/hospital", tags=["data upload"])
 
 
-@router.get("/upload", response_model=UploadStatusResponse)
+@router.get("/upload_status", response_model=UploadStatusResponse)
 async def get_upload_status(
     current_user: User = Depends(require_hospital_user),
     db: Session = Depends(get_db)
@@ -35,7 +36,7 @@ async def get_upload_status(
     )
 
 
-@router.post("/upload-stock", response_model=StockUploadResponse)
+@router.post("/upload_stock", response_model=StockUploadResponse)
 async def upload_stock(
     file: UploadFile = File(...),
     current_user: User = Depends(require_hospital_user),
@@ -99,7 +100,7 @@ async def upload_stock(
     )
 
 
-@router.post("/upload-usage", response_model=StockUploadResponse)
+@router.post("/upload_usage", response_model=StockUploadResponse)
 async def upload_usage(
     file: UploadFile = File(...),
     current_user: User = Depends(require_hospital_user),

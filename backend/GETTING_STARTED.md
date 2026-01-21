@@ -197,7 +197,7 @@ MED002,Amoxicillin 250mg,1200,2025-06-30
 
 Then upload:
 ```bash
-curl -X POST "http://localhost:8000/api/hospital/upload-stock" \
+curl -X POST "http://localhost:8000/api/hospital/upload_stock" \
   -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -F "file=@stock.csv"
 ```
@@ -357,7 +357,7 @@ After initial setup:
 1. **Upload Real Data**
    - Prepare stock.csv with your medicines
    - Prepare usage.csv with consumption history
-   - Upload via `/api/hospital/upload-stock` and `/api/hospital/upload-usage`
+   - Upload via `/api/hospital/upload_stock` and `/api/hospital/upload_usage`
 
 2. **Review Predictions**
    - Call `/api/hospital/calculate-predictions` to generate X1-X4

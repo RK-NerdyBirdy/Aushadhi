@@ -17,7 +17,6 @@ class StockResponse(BaseModel):
     medicine_name: str
     medicine_expiry: date
     medicine_quantity: int
-    last_updated: datetime
     
     class Config:
         from_attributes = True

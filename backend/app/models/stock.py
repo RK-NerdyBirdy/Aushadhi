@@ -10,7 +10,6 @@ class HospitalStock(Base):
     medicine_name = Column(VARCHAR(255), nullable=False)
     medicine_expiry = Column(DATE, nullable=False)
     medicine_quantity = Column(Integer, nullable=False)
-    last_updated = Column(TIMESTAMP, default=func.now(), onupdate=func.now())
     
     __table_args__ = (
         PrimaryKeyConstraint('hospital_id', 'medicine_id', name='pk_hospital_stock'),
