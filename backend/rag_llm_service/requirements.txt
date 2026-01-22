@@ -1,8 +1,0 @@
-fastapi
-uvicorn
-psycopg2-binary
-pydantic
-groq
-python-dotenv
-numpy
-sentence-transformers
