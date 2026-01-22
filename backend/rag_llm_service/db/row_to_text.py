@@ -11,7 +11,7 @@ def build_context_block(*, usage, stock, prediction, medicine, orders):
         lines.append(f"Peak daily usage: {usage['peak_daily_usage']} units")
         lines.append(f"Total usage in period: {usage['total_usage']} units")
 
-    # 🔥 FIXED STOCK HANDLING
+   
     if stock:
         if isinstance(stock, list) and isinstance(stock[0], dict):
             total_stock = sum(s.get("medicine_quantity", 0) for s in stock)
